@@ -1,0 +1,343 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}Аккаунт{% endblock %}
+
+{% block style %}  
+    <style>
+        .header {
+            display: flex;
+            flex-direction: column;
+            min-width: 700px;
+            position: sticky;
+            top: 40px;
+            background-color: rgb(255, 255, 255);
+            border-radius: 8px;
+            border-bottom: 1.4px solid rgb(219, 219, 219);
+        }
+        .header .row {
+            border-radius: 8px;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header .row p {
+            font-style: italic;
+        }
+        .header .row  * {
+            margin: 0;
+        }
+        .title {
+            font-family: monospace;
+            align-self: center;
+            margin-bottom: 6px;
+        }
+
+        .side {
+            position: fixed;
+            left: 20px;
+            top: 80px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .side h2, .side h3, .side p {
+            margin: 0;
+            max-inline-size: 300px;
+        }
+
+        .applicant {
+            font-family: monospace;
+            border-radius: 8px;
+            width: 300px;
+            border: 1px solid rgb(240, 240, 240);
+            padding: 4px;
+        }
+
+        .applicant form {
+            display: inline-block;
+        }
+
+        .applicant button {
+            margin-top: 6px;
+        }
+
+        .project {
+            font-family: monospace;
+            color: rgb(49, 49, 49);
+            width: 500px;
+            margin: 30px 0;
+            padding: 14px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .project .row-col {
+            margin: -14px;
+            padding: 5px;
+            margin-bottom: 4px;
+        }
+        .project .row-col .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .project .row-col .row *{
+            margin: 0;
+        }
+
+        .project .employer {
+            margin: 0;
+        }
+
+        .project .team {
+            margin: 0;
+        }
+
+        .project .team + ul{
+            margin-top: 4px;
+            padding-left: 20px;
+        }
+        #home {
+            cursor: pointer;
+        }
+        .overlay {
+            position: fixed;
+            z-index: 3;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            display: none;
+        }
+        .card {
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: white;
+            width: 500px;
+        }
+
+        #fire {
+            display: inline;
+        }
+
+        .card form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            height: 100%;
+            padding: 15px;
+        }
+
+        form label {
+            align-self: baseline;
+        }
+
+        form #create-btn {
+            align-self: end;
+            margin-top: 20px;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        input, textarea {
+            width: 100%;
+        }
+
+        input[type='number'] {
+            align-self: baseline;
+            width: 80px;
+        }
+    </style>
+{% endblock %}
+
+{% block nav %}
+    <h1 id="home">Django</h1>
+    {% if user.is_authenticated %}
+        <div class="login-details">
+            {% if user.last_name and user.first_name %}
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+                <button id="personal-account">Personal Account</button>
+                <h2>{{ user.last_name }} {{ user.first_name }}</h2> 
+            {% else %}
+                <h2>{{ user.username }}</h2>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="login-details">
+            <button id="login">Login</button>
+            <button id="sign-up">Sign Up</button>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <div class="row">
+            <h2>{{ account.last_name }} {{ account.first_name }}</h2>
+            {% if account.account_type == '1' %} 
+                <p>Employer</p>
+            {% else %} 
+                <p>Worker</p> 
+            {% endif %}
+        </div>
+    </div>
+         
+    {% if account.account_type == '1' %}
+
+        <h2 class="title">Employer's Projects</h2>
+        {% if account.id == user.id %}
+            <button id='new-project'>Create New</button>
+        {% endif %}
+
+        <!-- Project Component -->
+        {% for project in projects %} 
+            <div class="project">
+                <div class="row-col">
+                    <div class="row">
+                        <h2>{{ project.title }}</h2>
+                        <p>{{ project.date }}</p>
+                    </div>
+                    <p class="employer">Employer: <a href="http://127.0.0.1:8000/account/{{project.employer_id}}">{{ project.employer }}</a></p>
+                </div>
+                
+                <p class="desc">{{ project.desc }}</p>
+                
+                <h4 class="team">Team:</h4>
+                <ul>
+                    {% for one in project.teammember_set.all %}
+                        {% if one.pending is False %}                         
+                        <li><a href="http://127.0.0.1:8000/account/{{one.member_id}}">{{ one.member_name }}</a>
+                            <form id="fire" action="#" method="post">
+                                {% csrf_token %}
+                                <input type="number" name="project_id_fire" style="display: none" value='{{project.id}}'>
+                                <input type="number" name="member_id" style="display: none" value='{{one.member_id}}'>
+                                {% if user.id == account.id %}
+                                    <button type="submit">Fire</button>
+                                {% endif %}
+                            </form>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+
+    {% else %}
+
+        <h2 class="title">Participates in Projects</h2>
+
+        <!-- Project Component -->
+        {% for project in my_projects %} 
+            <div class="project">
+                <div class="row-col">
+                    <div class="row">
+                        <h2>{{ project.title }}</h2>
+                        <p>{{ project.date }}</p>
+                    </div>
+                    <p class="employer">Employer: <a href="http://127.0.0.1:8000/account/{{project.employer_id}}">{{ project.employer }}</a></p>
+                </div>
+                
+                <p class="desc">{{ project.desc }}</p>
+                
+                <h4 class="team">Teem:</h4>
+                <ul>
+                    {% for one in project.teammember_set.all %}
+                        {% if one.pending is False %}                         
+                            <li><a href="http://127.0.0.1:8000/account/{{one.member_id}}">{{ one.member_name }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+
+    {% endif %}
+
+    <div class="overlay">
+        <div class="card">
+            <form method="post" action="#">
+                {% csrf_token %}
+                <h2>New Project</h2>
+
+                <label for="title">Title</label>
+                <input type="text" name="title">
+
+                <label for="desc">Description</label>
+                <textarea name="desc"></textarea>
+
+                <label for="team">Size of the Team</label>
+                <input type="number" min="1" name="team">
+
+                <button class="create-btn" type="submit">Create</button>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block side %}
+
+    {% if applicants %}
+        <div class="side">
+            {% if user.id == account.id and user.account_type == '1' %}
+
+                <h2>Pending Applicants</h2>
+
+                {% for applicant in applicants %}
+                    <div class="applicant">
+                        <h3>{{applicant.member_name}}</h3>
+                        <p>Wants to participate in the project:<p> <p><b>{{applicant.project.title}}</b></p>
+                        <form action="#" method="post">
+                            {% csrf_token %}
+                            <input type="number" name="project_id" style="display: none" value='{{applicant.project.id}}'>
+                            <input type="number" name="member_id" style="display: none" value='{{applicant.member_id}}'>
+                            <button type="submit" onclick="() => window.location.reload()">Accept</button>
+                        </form>
+                        <form action="#" method="post">
+                            {% csrf_token %}
+                            <input type="number" name="project_id_fire" style="display: none" value='{{applicant.project.id}}'>
+                            <input type="number" name="member_id" style="display: none" value='{{applicant.member_id}}'>
+                            <button type="submit" onclick="() => window.location.reload()">Refuse</button>
+                        </form>
+                    </div>
+                {% endfor %}
+
+            {% else %}
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block script %}
+<script>
+    $('#new-project').click(function () {
+        $('.overlay').css('display', 'flex').click(function() {
+                $('.overlay').css('display', 'none')
+            }
+        )
+    })
+    $('.card').click(function() {
+        event.stopPropagation()
+    })
+    $('#home').click(function () {
+        window.location.replace('http://127.0.0.1:8000/')
+    })
+    $('#personal-account').click(function() {
+        window.location.replace("http://127.0.0.1:8000/account/{{user.id}}");
+    })
+</script>
+{% endblock %}

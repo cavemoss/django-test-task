@@ -1,0 +1,5 @@
+/accounts/__pycache__/
+/main/__pycache__/
+/projects/__pycache__/
+Pipfile
+Pipfile.lock

@@ -1,0 +1,118 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}Projects{% endblock %}
+
+{% block style %}  
+    <style>
+        .project {
+            font-family: monospace;
+            color: rgb(49, 49, 49);
+            width: 500px;
+            margin: 30px 0;
+            padding: 14px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .project .row-col {
+            margin: -14px;
+            padding: 5px;
+            margin-bottom: 4px;
+        }
+
+        .project .row-col .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .project .row-col .row *{
+            margin: 0;
+        }
+
+        .project .employer {
+            margin: 0;
+        }
+
+        .project .team {
+            margin: 0;
+        }
+
+        .project .team + ul{
+            margin-top: 4px;
+            padding-left: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block nav %}
+    <h1>Django</h1>
+    {% if user.is_authenticated %}
+        <div class="login-details">
+            {% if user.last_name and user.first_name %}
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+                <button id="personal-account">Personal Account</button>
+                <h2>{{ user.last_name }} {{ user.first_name }}</h2> 
+            {% else %}
+                <h2>{{ user.username }}</h2>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="login-details">
+            <button id="login">Login</button>
+            <button id="sign-up">Sign Up</button>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+    <!-- Project Component -->
+    {% for project in projects %} 
+        <div class="project">
+            <div class="row-col">
+                <div class="row">
+                    <h2>{{ project.title }}</h2>
+                    <p>{{ project.date }}</p>
+                </div>
+                <p class="employer">Employer: <a href="http://127.0.0.1:8000/account/{{project.employer_id}}">{{ project.employer }}</a></p>
+            </div>
+            
+            <p class="desc">{{ project.desc }}</p>
+            
+            <h4 class="team">Team:</h4>
+            <ul>
+                {% for one in project.teammember_set.all %}
+                    {% if one.pending is False %}                         
+                        <li><a href="http://127.0.0.1:8000/account/{{one.member_id}}">{{ one.member_name }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            {% if user.account_type == '2' %}
+                <form action="#" method="post">
+                    {% csrf_token %}
+                    <input type="number" name="project_id" style="display: none" value='{{project.id}}'>
+                    <button id="apply" type="submit">Apply to Participate</button>
+                </form>
+            {% endif %}
+        </div>
+    {% endfor %}
+    
+{% endblock %}
+
+{% block script %}
+<script>
+    $('#personal-account').click(function() {
+        window.location.replace("http://127.0.0.1:8000/account/{{user.id}}");
+    })
+    $('#login').click(function() {
+        window.location.replace("http://127.0.0.1:8000/login");
+    })
+    $('#sign-up').click(function() {
+        window.location.replace("http://127.0.0.1:8000/signup");
+    })  
+</script>
+{% endblock %}
